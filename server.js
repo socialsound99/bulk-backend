@@ -1,12 +1,13 @@
 import express from "express";
-import cors from "cors";
 import multer from "multer";
+import cors from "cors";
 import XLSX from "xlsx";
 import OpenAI from "openai";
 import fs from "fs";
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 const upload = multer({ dest: "uploads/" });
 
 const openai = new OpenAI({
