@@ -30,24 +30,17 @@ const openai = new OpenAI({
 // ✅ MAIN API
 app.post("/generate-bulk", upload.single("file"), async (req, res) => {
   try {
-    // ✅ check file
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
     const filePath = req.file.path;
 
-    // ✅ read excel
     const workbook = XLSX.readFile(filePath);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const products = XLSX.utils.sheet_to_json(sheet);
 
     let results = [];
 
-    // ✅ loop through products
     for (let product of products) {
-  try {
-    const prompt = `
+      try {
+        const prompt = `
 Create product listing:
 
 Name: ${product["Product Name"]}
@@ -60,34 +53,32 @@ Bullet Points:
 Description:
 `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-    });
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }],
+        });
 
-    results.push({
-      name: product["Product Name"],
-      output: response.choices[0].message.content,
-    });
+        results.push({
+          name: product["Product Name"],
+          output: response.choices[0].message.content,
+        });
 
-  } catch (error) {
-    console.error("OPENAI ERROR:", error);
+      } catch (err) {
+        console.error("Row error:", err);
 
-    results.push({
-      name: product["Product Name"] || "Unknown",
-      output: "Error generating content",
-    });
-  }
-}
+        results.push({
+          name: product["Product Name"] || "Unknown",
+          output: "Error generating content",
+        });
+      }
+    }
 
-    // ✅ delete uploaded file
     fs.unlinkSync(filePath);
 
-    // ✅ send response
     res.json(results);
 
   } catch (error) {
-    console.error("ERROR:", error);
+    console.error("MAIN ERROR:", error);
 
     res.status(500).json({
       error: "Something went wrong",
