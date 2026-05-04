@@ -46,12 +46,13 @@ app.post("/generate-bulk", upload.single("file"), async (req, res) => {
 
     // ✅ loop through products
     for (let product of products) {
-      const prompt = `
+  try {
+    const prompt = `
 Create product listing:
 
-Name: ${product.name || ""}
-Features: ${product.features || ""}
-Keywords: ${product.keywords || ""}
+Name: ${product["Product Name"]}
+Features: ${product["Key Features"]}
+Keywords: ${product["Short Notes / Keywords"]}
 
 Output:
 Title:
@@ -59,16 +60,25 @@ Bullet Points:
 Description:
 `;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-      });
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
 
-      results.push({
-        name: product.name,
-        output: response.choices[0].message.content,
-      });
-    }
+    results.push({
+      name: product["Product Name"],
+      output: response.choices[0].message.content,
+    });
+
+  } catch (error) {
+    console.error("OPENAI ERROR:", error);
+
+    results.push({
+      name: product["Product Name"] || "Unknown",
+      output: "Error generating content",
+    });
+  }
+}
 
     // ✅ delete uploaded file
     fs.unlinkSync(filePath);
