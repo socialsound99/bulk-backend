@@ -38,30 +38,38 @@ app.post("/generate-bulk", upload.single("file"), async (req, res) => {
 
     let results = [];
 
-    for (let product of products) {
-      try {
-        const prompt = `
+    for (let product of products.slice(0, 3)) {
+  const prompt = `
 Create product listing:
 
-Name: ${product["Product Name"]}
-Features: ${product["Key Features"]}
-Keywords: ${product["Short Notes / Keywords"]}
-
-Output:
-Title:
-Bullet Points:
-Description:
+Name: ${product.name}
+Features: ${product.features}
+Keywords: ${product.keywords}
 `;
 
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
-        });
+  const response = {
+    choices: [
+      {
+        message: {
+          content: `Title: ${product.name} - Premium Product
 
-        results.push({
-          name: product["Product Name"],
-          output: response.choices[0].message.content,
-        });
+Bullet Points:
+- High quality product
+- Trusted brand
+- Best in category
+
+Description:
+This is a demo AI-generated description for ${product.name}.`
+        }
+      }
+    ]
+  };
+
+  results.push({
+    name: product.name,
+    output: response.choices[0].message.content,
+  });
+}
 
       } catch (error) {
   console.error("FULL ERROR:", error);
