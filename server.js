@@ -2,34 +2,26 @@ import express from "express";
 import multer from "multer";
 import cors from "cors";
 import XLSX from "xlsx";
-import OpenAI from "openai";
 import fs from "fs";
 
 const app = express();
-
-// ✅ CORS FIX (VERY IMPORTANT)
-app.use(cors({
-  origin: "*",
-}));
-
+app.use(cors());
 app.use(express.json());
 
-// ✅ File upload setup
 const upload = multer({ dest: "uploads/" });
 
-// ✅ Test route (for checking backend)
+// ✅ TEST ROUTE
 app.get("/test", (req, res) => {
   res.json({ message: "Backend working perfectly" });
 });
 
-// ✅ OpenAI setup
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// ✅ MAIN API
+// ✅ MAIN ROUTE (DEMO VERSION — NO OPENAI)
 app.post("/generate-bulk", upload.single("file"), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
     const filePath = req.file.path;
 
     const workbook = XLSX.readFile(filePath);
@@ -38,47 +30,23 @@ app.post("/generate-bulk", upload.single("file"), async (req, res) => {
 
     let results = [];
 
-    for (let product of products.slice(0, 3)) {
-  const prompt = `
-Create product listing:
+    for (let product of products.slice(0, 5)) {
+      const name = product["Product Name"] || "Unknown Product";
 
-Name: ${product.name}
-Features: ${product.features}
-Keywords: ${product.keywords}
-`;
-
-  const response = {
-    choices: [
-      {
-        message: {
-          content: `Title: ${product.name} - Premium Product
+      const output = `Title: ${name}
 
 Bullet Points:
-- High quality product
-- Trusted brand
-- Best in category
+- High quality
+- Best performance
+- Trusted product
 
 Description:
-This is a demo AI-generated description for ${product.name}.`
-        }
-      }
-    ]
-  };
+This is a demo generated description for ${name}.`;
 
-  results.push({
-    name: product.name,
-    output: response.choices[0].message.content,
-  });
-}
-
-      } catch (error) {
-  console.error("FULL ERROR:", error);
-
-  results.push({
-    name: product.name,
-    output: error.message || "Unknown error",
-  });
-}
+      results.push({
+        name: name,
+        output: output,
+      });
     }
 
     fs.unlinkSync(filePath);
@@ -86,15 +54,16 @@ This is a demo AI-generated description for ${product.name}.`
     res.json(results);
 
   } catch (error) {
-    console.error("MAIN ERROR:", error);
-
+    console.error("ERROR:", error);
     res.status(500).json({
-      error: "Something went wrong",
+      error: "Server crashed",
       details: error.message,
     });
   }
 });
 
-// ✅ start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
