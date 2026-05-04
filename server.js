@@ -63,14 +63,14 @@ Description:
           output: response.choices[0].message.content,
         });
 
-      } catch (err) {
-        console.error("Row error:", err);
+      } catch (error) {
+  console.error("FULL ERROR:", error);
 
-        results.push({
-          name: product["Product Name"] || "Unknown",
-          output: "Error generating content",
-        });
-      }
+  results.push({
+    name: product.name,
+    output: error.message || "Unknown error",
+  });
+}
     }
 
     fs.unlinkSync(filePath);
