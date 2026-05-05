@@ -61,7 +61,39 @@ This is a demo generated description for ${name}.`;
     });
   }
 });
+import nodemailer from "nodemailer";
 
+app.post("/send-email", async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "contact@productdetailer.com",
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    await transporter.sendMail({
+      from: email,
+      to: "contact@productdetailer.com",
+      subject: "New Contact Form Message",
+      html: `
+        <h3>New Message</h3>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>Message:</b> ${message}</p>
+      `
+    });
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Email failed" });
+  }
+});
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
